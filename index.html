@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<!-- Подключение Bootstrap чтобы все выглядело красиво -->
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css">
+	<title>Chat application</title>
+	<!-- Свои стили -->
+	<style>
+		body {
+			background: #fcfcfc;
+		}
+	</style>
+</head>
+<body>
+	<div class="d-flex flex-column flex-md-row align-items-center p-3 px-md-4 mb-3 bg-white border-bottom shadow-sm">
+		<h5 class="my-0 mr-md-auto">NodeJS application</h5>
+		<nav class="my-2 my-md-0 mr-md-3">
+			<a class="p-2 text-dark" href="#">Main</a>
+			<a class="p-2 text-dark" href="#">About</a>
+			<a class="p-2 text-dark" href="#">Support</a>
+			<a class="p-2 text-dark" href="#">Price</a>
+		</nav>
+		<a class="btn btn-outline-primary" href="#">Sign In</a>
+	</div>
+	<!-- Основная часть страницы -->
+	<div class="container">
+		<div class="py-5 text-center">
+			<h2>Application chat</h2>
+			<p class="lead">Please, enter your name and start chating...</p>
+		</div>
+		<div class="row">
+			<div class="col-6">
+				<h3>Messages</h3>
+				<form id="messagesForm">
+					<label for="name">Name</label>
+					<input type="text" name="name" id="name" placeholder="Input name" class="form-control">
+					<br>
+					<label for="message">Messages</label>
+					<textarea name="message" id="message" class="form-control" placeholder="Enter message"></textarea>
+					<br>
+					<input type="submit" value="Send" class="btn btn-danger">
+				</form>
+			</div>
+			<div class="col-6">
+				<h3>Messages</h3>
+				<div id="allMessages"></div>
+			</div>
+		</div>
+	</div>
+	<!-- Подключаем jQuery, а также Socket.io -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		// У каждого пользователя будет случайный стиль для блока с сообщенями,
+		// поэтому в этом кусочке кода мы получаем случайные числа
+		var min = 1;
+		var max = 6;
+		var random = Math.floor(Math.random() * (max - min)) + min;
+
+		// Устаналиваем класс в переменную в зависимости от случайного числа
+		// Эти классы взяты из Bootstrap стилей
+		var alertClass;
+		switch (random) {
+			case 1:
+				alertClass = 'secondary';
+				break;
+			case 2:
+				alertClass = 'danger';
+				break;
+			case 3:
+				alertClass = 'success';
+				break;
+			case 4:
+				alertClass = 'warning';
+				break;
+			case 5:
+				alertClass = 'info';
+				break;
+			case 6:
+				alertClass = 'light';
+				break;
+		}
+
+		// Функция для работы с данными на сайте
+		$(function() {
+			// Включаем socket.io и отслеживаем все подключения
+			var socket = io.connect();
+			// Делаем переменные на:
+			var $form = $("#messagesForm"); // Форму сообщений
+			var $name = $("#name"); // Поле с именем
+			var $textarea = $("#message"); // Текстовое поле
+			var $allMessages = $("#allMessages"); // Блок с сообщениями
+
+			// Отслеживаем нажатие на кнопку в форме сообщений
+			$form.submit(function(event) {
+				// Предотвращаем классическое поведение формы
+				event.preventDefault();
+				// В сокет отсылаем новое событие 'send mess',
+				// в событие передаем различные параметры и данные
+				socket.emit('send message', {message: $textarea.val(), name: $name.val(), className: alertClass});
+				// Очищаем поле с сообщением
+				$textarea.val('');
+			});
+
+			// Здесь отслеживаем событие 'add mess',
+			// которое должно приходить из сокета в случае добавления нового сообщения
+			socket.on('add message', function(data) {
+				// Встраиваем полученное сообщение в блок с сообщениями
+				// У блока с сообщением будет тот класс, который соответвует пользователю что его отправил
+				$allMessages.append("<div class='alert alert-" + data.className + "'><b>" + data.name + "</b>: " + data.message + "</div>");
+			});
+		});
+	</script>
+</body>
+</html>
